@@ -55,10 +55,10 @@
         </span>
 
         <div class="controls">
-          <input type="checkbox">
+          <input v-model="skipOpeningMeta!.enabled" type="checkbox" @change="isSkipOpChange">
 
-          <button>Отметить начало опенинга</button>
-          <button>Отметить окончание опенинга</button>
+          <button @click="setOpStart">Отметить начало опенинга {{ skipOpStartTime }}</button>
+          <button @click="setOpEnd">Отметить окончание опенинга {{ skipOpEndTime }}</button>
         </div>
       </label>
 
@@ -68,10 +68,10 @@
         </span>
 
         <div class="controls">
-          <input type="checkbox">
+          <input v-model="skipEndingMeta!.enabled" type="checkbox" @change="isSkipEdChange">
 
-          <button>Отметить начало эндинга</button>
-          <button>Отметить окончание эндинга</button>
+          <button @click="setEdStart">Отметить начало эндинга {{ skipEdStartTime }}</button>
+          <button @click="setEdEnd">Отметить окончание эндинга {{ skipEdEndTime }}</button>
         </div>
       </label>
     </div>
@@ -109,6 +109,8 @@
 import { computed, Ref, ref, onBeforeMount } from 'vue';
 import { EpisodeItem, StreamItem, TranslationItem, EpisodeDescriptionItem } from '../../types/episode';
 import { ListItem } from '../../types/list';
+import { EpisodesMeta } from '../../types/episode';
+import { useEpisodeMetaStorage } from '../../utils/episode-meta-storage';
 import { Player } from '../player';
 
 const props = defineProps<{
@@ -128,7 +130,60 @@ const translation: Ref<TranslationItem | null> = ref(null)
 const quality: Ref<StreamItem | null> = ref(null)
 const videoId = ref(-1)
 
+const skipOpeningMeta: Ref<EpisodesMeta['skipOpening']> = ref({
+  enabled: false
+})
+const skipEndingMeta: Ref<EpisodesMeta['skipEnding']> = ref({
+  enabled: false
+})
+
+const { save, load } = useEpisodeMetaStorage(props.item.id)
+
 const episodes = computed(() => props.item.episodes)
+
+const skipOpStartTime = computed(() => {
+  if (typeof skipOpeningMeta.value?.from !== 'number') {
+    return
+  }
+
+  const time = Math.round(skipOpeningMeta.value.from)
+  const min = Math.floor(time / 60)
+  const sec = time >= 60 ? time % (60 * min) : time
+  return `(с ${min}:${sec})`
+})
+
+const skipOpEndTime = computed(() => {
+  if (typeof skipOpeningMeta.value?.to !== 'number') {
+    return
+  }
+
+  const time = Math.round(skipOpeningMeta.value.to)
+  const min = Math.floor(time / 60)
+  const sec = time >= 60 ? time % (60 * min) : time
+  return `(с ${min}:${sec})`
+})
+
+const skipEdStartTime = computed(() => {
+  if (typeof skipEndingMeta.value?.from !== 'number') {
+    return
+  }
+
+  const time = Math.round(skipEndingMeta.value.from)
+  const min = Math.floor(time / 60)
+  const sec = time >= 60 ? time % (60 * min) : time
+  return `(с ${min}:${sec})`
+})
+
+const skipEdEndTime = computed(() => {
+  if (typeof skipEndingMeta.value?.to !== 'number') {
+    return
+  }
+
+  const time = Math.round(skipEndingMeta.value.to)
+  const min = Math.floor(time / 60)
+  const sec = time >= 60 ? time % (60 * min) : time
+  return `(с ${min}:${sec})`
+})
 
 const filtredTranslations = computed(() =>
   translations.value
@@ -179,20 +234,20 @@ const episodeChange = async (ep: number) => {
     await fetchNextEpisode(episodeMeta)
   }
 
-  localStorage.setItem(`meta:${props.item.id}`, JSON.stringify({
-    ...JSON.parse(localStorage.getItem(`meta:${props.item.id}`) as string),
+  save({
+    ...load(),
     lastEpisode: episodeMeta?.episode,
     lastTranslation: episodeMeta?.translation,
-    videos
-  }))
+    videos: videos.value
+  })
 }
 const timeChange = (sec: number) => {
   time.value = sec
 
-  localStorage.setItem(`meta:${props.item.id}`, JSON.stringify({
-    ...JSON.parse(localStorage.getItem(`meta:${props.item.id}`) as string),
+  save({
+    ...load(),
     lastEpisodeTime: sec
-  }))
+  })
 }
 
 const selectEpisode = async () => {
@@ -234,26 +289,115 @@ const selectVideo = async () => {
 
   await fetchNextEpisode(videos.value[0])
 
-  localStorage.setItem(`meta:${props.item.id}`, JSON.stringify({
-    lastEpisode: episode.value,
-    lastTranslation: translation.value,
+  save({
+    lastEpisode: episode.value!,
+    lastTranslation: translation.value!,
     videos: videos.value
-  }))
+  })
 
   localStorage.setItem('preferQuality', quality.value?.height.toString() as string)
 }
 
+const setOpStart = () => {
+  const meta = load()
+  save({
+    ...meta,
+    skipOpening: {
+      ...meta.skipOpening,
+      from: time.value
+    }
+  })
+
+  skipOpeningMeta.value = {
+    ...meta.skipOpening,
+    from: time.value
+  }
+}
+
+const setOpEnd = () => {
+  const meta = load()
+  save({
+    ...meta,
+    skipOpening: {
+      ...meta.skipOpening,
+      to: time.value
+    }
+  })
+
+  skipOpeningMeta.value = {
+    ...meta.skipOpening,
+    to: time.value
+  }
+}
+
+const setEdStart = () => {
+  const meta = load()
+  save({
+    ...meta,
+    skipEnding: {
+      ...meta.skipEnding,
+      from: time.value
+    }
+  })
+
+  skipEndingMeta.value = {
+    ...meta.skipEnding,
+    from: time.value
+  }
+}
+
+const setEdEnd = () => {
+  const meta = load()
+  save({
+    ...meta,
+    skipEnding: {
+      ...meta.skipEnding,
+      to: time.value
+    }
+  })
+
+  skipEndingMeta.value = {
+    ...meta.skipEnding,
+    to: time.value
+  }
+}
+
+const isSkipOpChange = () => {
+  const meta = load()
+  save({
+    ...meta,
+    skipOpening: {
+      ...meta.skipOpening,
+      enabled: skipOpeningMeta.value?.enabled
+    }
+  })
+}
+
+const isSkipEdChange = () => {
+  const meta = load()
+  save({
+    ...meta,
+    skipEnding: {
+      ...meta.skipEnding,
+      enabled: skipEndingMeta.value?.enabled
+    }
+  })
+}
+
 onBeforeMount(() => {
   try {
-    const meta = JSON.parse(localStorage.getItem(`meta:${props.item.id}`) as string)
+    const meta = load()
 
     preferTranslation = localStorage.getItem('preferTranslation') || ''
     preferQuality = parseInt(localStorage.getItem('preferQuality') as string) ?? -1
 
-    time.value = meta.lastEpisodeTime
-    videos.value = meta.videos
-    episode.value = episodes.value.find(it => it.id === meta.lastEpisode.id)!
-    videoId.value = meta.lastTranslation.id
+    time.value = meta.lastEpisodeTime || 0
+    videos.value = meta.videos || []
+    episode.value = episodes.value.find(it => it.id === meta.lastEpisode?.id)!
+    videoId.value = meta.lastTranslation?.id || videos.value[0].episode.id
+
+    skipOpeningMeta.value = meta.skipOpening
+    skipEndingMeta.value = meta.skipEnding
   } catch (err) {
     console.error(err)
   }
@@ -367,6 +511,6 @@ onBeforeMount(() => {
 }
 
 .controls > button {
-  width: 220px;
+  width: 280px;
 }
 </style>

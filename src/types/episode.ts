@@ -29,3 +29,22 @@ export type StreamItem = {
   height: number,
   urls: string[]
 }
+
+export type EpisodesMeta = {
+  lastEpisode?: EpisodeDescriptionItem
+  lastTranslation?: TranslationItem
+  videos?: EpisodeItem[]
+
+  lastEpisodeTime?: number
+
+  skipOpening?: {
+    enabled?: boolean
+    to?: number
+    from?: number
+  }
+  skipEnding?: {
+    enabled?: boolean
+    to?: number
+    from?: number
+  }
+}
