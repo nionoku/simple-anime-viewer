@@ -285,7 +285,8 @@ const selectTranslation = async () => {
     const response = await fetch(`/api/translations/embed/${translation.value?.id}`).then(it => it.json())
     qualities.value = response.data.stream
 
-    localStorage.setItem('preferTranslation', translation.value?.authorsSummary as string)
+    localStorage.setItem('preferTranslation', translation.value?.authorsList[0] || translation.value?.authorsSummary || '')
+    preferTranslation = translation.value?.authorsList[0] || translation.value?.authorsSummary || ''
   } catch (err) {
     console.error(err)
   }
@@ -308,7 +309,8 @@ const selectVideo = async () => {
     videos: videos.value
   })
 
-  localStorage.setItem('preferQuality', quality.value?.height.toString() as string)
+  localStorage.setItem('preferQuality', (quality.value?.height || 720).toString())
+  preferQuality = quality.value?.height || 720
 }
 
 const setOpStart = () => {
