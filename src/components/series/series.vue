@@ -380,6 +380,8 @@ const setEdEnd = () => {
 }
 
 const isSkipOpChange = () => {
+  skipOpeningMeta.value!.enabled = !skipOpeningMeta.value!.enabled
+
   const meta = load()
   save({
     ...meta,
@@ -391,6 +393,8 @@ const isSkipOpChange = () => {
 }
 
 const isSkipEdChange = () => {
+  skipEndingMeta.value!.enabled = !skipEndingMeta.value!.enabled
+
   const meta = load()
   save({
     ...meta,
