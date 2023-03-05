@@ -235,7 +235,9 @@ const episodeChange = async (ep: number) => {
   if (episodeMeta) {
     episode.value = episodeMeta.episode
     translation.value = episodeMeta.translation
+    translations.value = [episodeMeta.translation]
     quality.value = episodeMeta.quality
+    qualities.value = [episodeMeta.quality]
 
     await fetchNextEpisode(episodeMeta)
   }
@@ -408,7 +410,15 @@ onBeforeMount(() => {
 
     time.value = meta.lastEpisodeTime || 0
     videos.value = meta.videos || []
-    episode.value = episodes.value.find(it => it.id === meta.lastEpisode?.id)!
+    episode.value = meta.lastEpisode!
+    qualities.value = [meta.videos?.find(it => it.episode.id === meta.lastEpisode?.id)?.quality!]
+    quality.value = qualities.value[0]
+    
+    if (meta.lastTranslation) {
+      translation.value = meta.lastTranslation
+      translations.value = [meta.lastTranslation]
+    }
+    
     videoId.value = meta.lastTranslation?.id || videos.value[0].episode.id
 
     skipOpeningMeta.value = meta.skipOpening
