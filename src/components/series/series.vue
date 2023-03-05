@@ -4,6 +4,7 @@
       :episodes="videos"
       :episode="videoId"
       :current-time="time"
+      :playback-rate="playbackRate"
       autoplay
       @episode-change="episodeChange"
       @time-change="timeChange"
@@ -55,7 +56,7 @@
         </span>
 
         <div class="controls">
-          <input v-model="skipOpeningMeta!.enabled" type="checkbox" @change="isSkipOpChange">
+          <input v-model="skipOpEnabled" type="checkbox" @change="isSkipOpChange">
 
           <button @click="setOpStart">Отметить начало опенинга {{ skipOpStartTime }}</button>
           <button @click="setOpEnd">Отметить окончание опенинга {{ skipOpEndTime }}</button>
@@ -68,7 +69,7 @@
         </span>
 
         <div class="controls">
-          <input v-model="skipEndingMeta!.enabled" type="checkbox" @change="isSkipEdChange">
+          <input v-model="skipEdEnabled" type="checkbox" @change="isSkipEdChange">
 
           <button @click="setEdStart">Отметить начало эндинга {{ skipEdStartTime }}</button>
           <button @click="setEdEnd">Отметить окончание эндинга {{ skipEdEndTime }}</button>
@@ -121,6 +122,7 @@ const videos: Ref<EpisodeItem[]> = ref([])
 const translations: Ref<TranslationItem[]> = ref([])
 const qualities: Ref<StreamItem[]> = ref([])
 
+const playbackRate = ref(1)
 const time = ref(0)
 let preferTranslation = ''
 let preferQuality = -1
@@ -140,6 +142,9 @@ const skipEndingMeta: Ref<EpisodesMeta['skipEnding']> = ref({
 const { save, load } = useEpisodeMetaStorage(props.item.id)
 
 const episodes = computed(() => props.item.episodes)
+
+const skipOpEnabled = computed(() => skipOpeningMeta.value?.enabled || false)
+const skipEdEnabled = computed(() => skipEndingMeta.value?.enabled || false)
 
 const skipOpStartTime = computed(() => {
   if (typeof skipOpeningMeta.value?.from !== 'number') {
@@ -241,13 +246,20 @@ const episodeChange = async (ep: number) => {
     videos: videos.value
   })
 }
+
 const timeChange = (sec: number) => {
   time.value = sec
 
   save({
     ...load(),
     lastEpisodeTime: sec
+  });
+
+  const isSkipTime = [skipOpeningMeta.value, skipEndingMeta.value].some(it => {
+    return it?.enabled && time.value >= (it?.from ?? -1) && time.value <= (it?.to ?? -1)
   })
+  
+  playbackRate.value = isSkipTime ? 10 : 1
 }
 
 const selectEpisode = async () => {

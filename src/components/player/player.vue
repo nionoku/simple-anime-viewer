@@ -15,6 +15,7 @@ const props = defineProps<{
   episodes: EpisodeItem[]
   episode: number
   currentTime: number
+  playbackRate: number
   autoplay?: boolean
 }>();
 
@@ -24,23 +25,21 @@ const emits = defineEmits({
 });
 
 const video: Ref<HTMLVideoElement | null> = ref(null)
-let playbackRate = 1
 
 onMounted(() => {
   const videoElement = video.value as HTMLVideoElement
 
   videoElement.addEventListener('timeupdate', () => {
+    videoElement.playbackRate = Math.max(props.playbackRate, videoElement.defaultPlaybackRate)
     emits('timeChange', videoElement.currentTime)
   })
 
   videoElement.addEventListener('loadedmetadata', () => {
     videoElement.currentTime = props.currentTime
-    videoElement.playbackRate = playbackRate
+    videoElement.playbackRate = videoElement.defaultPlaybackRate
   })
 
   videoElement.addEventListener('ended', () => {
-    playbackRate = videoElement.playbackRate
-
     const nextEpisodeIndex = props.episodes.findIndex(it => it.translation.id === props.episode) + 1
     emits('episodeChange', props.episodes.at(nextEpisodeIndex)?.translation.id ?? -1)
   })
@@ -58,7 +57,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.container>video {
+.container > video {
   width: 100%;
 }
 </style>
