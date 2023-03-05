@@ -8,6 +8,7 @@
       autoplay
       @episode-change="episodeChange"
       @time-change="timeChange"
+      class="video"
     />
 
     <div class="episodes-selector">
@@ -418,13 +419,21 @@ onBeforeMount(() => {
 </script>
 
 <style scoped>
+.video {
+  max-height: 300px;
+}
+
 .series {
   display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  grid-template-rows: auto 1fr;
+  grid-template-columns: minmax(200px, 1fr) 2fr;
 
-  column-gap: 8px;
-  row-gap: 16px;
+  grid-gap: 16px;
+}
+
+@media screen and (max-width: 680px) {
+  .series {
+    grid-template-columns: 1fr;
+  }
 }
 
 .episodes-selector {
@@ -432,10 +441,7 @@ onBeforeMount(() => {
   flex-direction: column;
   justify-content: center;
 
-  margin: 16px;
   row-gap: 8px;
-
-  overflow: hidden;
 }
 
 .episodes-selector>label {
@@ -457,9 +463,14 @@ onBeforeMount(() => {
 .description {
   grid-column: 1 / 3;
 
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+@media screen and (max-width: 680px) {
+  .description {
+    grid-column: 1;
+  }
 }
 
 .title {
@@ -473,12 +484,15 @@ onBeforeMount(() => {
 }
 
 .genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
   margin-top: 8px;
 }
 
 .genre {
   padding: 4px 8px;
-  margin: 0 4px;
 
   background-color: #F0F0F0;
   border-radius: 4px;
@@ -489,16 +503,8 @@ onBeforeMount(() => {
   white-space: nowrap;
 }
 
-.genre:first-child {
-  margin-left: 0;
-}
-
-.genre:last-child {
-  margin-right: 0;
-}
-
 .summary {
-  overflow: auto;
+  /* overflow: auto; */
 
   margin-top: 12px;
   font-size: 0.9rem;
@@ -516,8 +522,9 @@ onBeforeMount(() => {
 .controls {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
 
-  column-gap: 8px;
+  gap: 8px;
 
   margin-top: 4px;
 }

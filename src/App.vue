@@ -1,24 +1,26 @@
 <template>
   <div class="container">
-    <div class="list-wrapper">
-      <input
-        placeholder="Поиск по списку"
-        class="search"
-        @input="onSearch"
-      />
+    <input
+      v-model="input"
+      placeholder="Поиск по списку"
+      class="search"
+      @input="onSearch"
+    />
 
-      <List 
-        :items="items"
-        class="list"
-        @click="onClick"
-      />
-    </div>
+    <List
+      v-show="input"
+      :items="items"
+      class="list"
+      @click="onClick"
+    />
 
     <Series
       v-if="selectedItem"
       :id="0" 
       :item="selectedItem"
-      class="series"
+      :style="{
+        gridColumn: input ? '2 / 3' : '1 / 3'
+      }"
     />
   </div>
 </template>
@@ -28,15 +30,21 @@ import { onBeforeMount, ref, Ref } from 'vue';
 import { List } from './components/list';
 import { Series } from './components/series';
 import { ListItem } from './types/list';
+import { debounce } from 'lodash'
 
+const input = ref('')
 const items: Ref<ListItem[]> = ref([])
 const selectedItem: Ref<ListItem | null> = ref(null)
+
+const fetchSeries = debounce(async (query: string) => {
+  const response = await fetch(`/api/series?query=${query}`).then(it => it.json())
+  items.value = response.data
+}, 300)
 
 const onSearch = async (event: Event) => {
   const query = (event.target as HTMLInputElement).value
 
-  const response = await fetch(`/api/series?query=${query}`).then(it => it.json())
-  items.value = response.data
+  fetchSeries(query)
 }
 
 const onClick = (item: ListItem) => {
@@ -54,25 +62,20 @@ onBeforeMount(async () => {
 
 <style scoped>
 .container {
-  display: flex;
   width: 100%;
   height: 100%;
+  padding: 12px;
+  box-sizing: border-box;
+
+  display: grid;
+  grid-template-columns: minmax(300px, 25%) 1fr;
+  grid-template-rows: max-content 1fr;
+  gap: 12px;
 
   overflow: hidden;
 }
 
-.list-wrapper {
-  display: flex;
-  flex-direction: column;
-
-  min-width: 300px;
-  flex-basis: 25%;
-  padding: 8px;
-}
-
 .list {
-  flex: 1;
-  margin-top: 8px;
   overflow: auto;
 }
 
@@ -82,9 +85,11 @@ onBeforeMount(async () => {
   box-sizing: border-box;
 
   font-size: 0.9rem;
+
+  grid-column: 1 / 3;
 }
 
 .series {
-  padding: 8px;
+  overflow: auto;
 }
 </style>
